@@ -1,5 +1,4 @@
-python3 -c '
-code = """import os; os.system("pip install plotly pandas")
+import os; os.system("pip install plotly pandas")
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -40,16 +39,16 @@ hoje_str = agora_local.strftime("%Y-%m-%d")
 
 col_esq, col_cen, col_dir = st.columns([3, 6, 3])
 with col_esq:
-    st.markdown(f\'\'\'<div class="header-clock-box"><div class="zulu-text">{str_zulu}</div><div class="local-text">LOCAL: {str_local}</div></div>\'\'\', unsafe_allow_html=True)
+    st.markdown(f'''<div class="header-clock-box"><div class="zulu-text">{str_zulu}</div><div class="local-text">LOCAL: {str_local}</div></div>''', unsafe_allow_html=True)
 with col_cen:
-    st.markdown(\'<div class="main-title">FAC PAMPAS</div>\', unsafe_allow_html=True)
+    st.markdown('<div class="main-title">FAC PAMPAS</div>', unsafe_allow_html=True)
 with col_dir:
-    st.markdown(\'<div class="floating-logo-container">\', unsafe_allow_html=True)
+    st.markdown('<div class="floating-logo-container">', unsafe_allow_html=True)
     if img_fac_b64:
-        st.markdown(f\'\'\'<img src="{img_fac_b64}" class="floating-logo-img" alt="FAC PAMPAS">\'\'\', unsafe_allow_html=True)
+        st.markdown(f'''<img src="{img_fac_b64}" class="floating-logo-img" alt="FAC PAMPAS">''', unsafe_allow_html=True)
     else:
-        st.markdown("<h1 style=\'text-align: right; margin:0;\'>🛡️</h1>", unsafe_allow_html=True)
-    st.markdown(\'</div>\', unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: right; margin:0;'>🛡️</h1>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 SHEET_ID = "10HRI46x5vI43i8-mXoQLexxsGDZvKfTG"
 GID = "1505958346"
@@ -90,9 +89,9 @@ if not df.empty:
 
 if atividades_em_andamento:
     texto_eventos = " | ".join(sorted(list(atividades_em_andamento)))
-    st.markdown(f\'\'\'<div class="blinking-badge-container"><div class="blinking-badge"><span>🔴 AGORA ({str_local}):</span> {texto_eventos}</div></div>\'\'\', unsafe_allow_html=True)
+    st.markdown(f'''<div class="blinking-badge-container"><div class="blinking-badge"><span>🔴 AGORA ({str_local}):</span> {texto_eventos}</div></div>''', unsafe_allow_html=True)
 
-st.markdown("<h4 style=\'color: #00BFFF; margin-bottom: 10px;\'>⚔️ Ritmo de Batalha - FAC PAMPAS COMAEX 2026</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='color: #00BFFF; margin-bottom: 10px;'>⚔️ Ritmo de Batalha - FAC PAMPAS COMAEX 2026</h4>", unsafe_allow_html=True)
 
 if dados_gantt:
     df_gantt = pd.DataFrame(dados_gantt)
@@ -105,6 +104,3 @@ if dados_gantt:
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("Nenhuma atividade cadastrada na planilha para exibição no Ritmo de Batalha.")
-"""
-open("streamlit_app.py", "w").write(code)
-'
