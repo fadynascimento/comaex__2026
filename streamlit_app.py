@@ -56,8 +56,10 @@ CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&
 
 @st.cache_data(ttl=15)
 def carregar_dados():
-    try: return pd.read_csv(CSV_URL)
-    except: return pd.DataFrame()
+    try:
+        return pd.read_csv(CSV_URL)
+    except:
+        return pd.DataFrame()
 
 df = carregar_dados()
 dados_gantt = []
@@ -66,26 +68,35 @@ atividades_em_andamento = set()
 if not df.empty:
     col_etiqueta = df.columns[0]
     colunas_horarios = list(df.columns[1:])
+    
     for idx, col in enumerate(colunas_horarios):
         col_str = str(col).strip()
-        if len(col_str) >= 5 and ":" in col_str: h_inicio_str = col_str[:5]
-        else: continue
-        if idx + 1 < len(colunas_horarios):
-            prox_col_str = str(colunas_horarios[idx + 1]).strip()
-            h_fim_str = prox_col_str[:5] if len(prox_col_str) >= 5 and ":" in prox_col_str else "23:59"
-        else: h_fim_str = "23:59"
-        try:
-            time_start = pd.to_datetime(f"{hoje_str} {h_inicio_str}")
-            time_end = pd.to_datetime(f"{hoje_str} {h_fim_str}")
-        except: continue
+        if len(col_str) >= 4 and ":" in col_str:
+            parts = col_str.split(":")
+            h = parts[0].zfill(2)
+            m = parts[1][:2].zfill(2)
+            h_inicio_str = f"{h}:{m}"
+        else:
+            continue
+
+        time_start = pd.to_datetime(f"{hoje_str} {h_inicio_str}")
+        time_end = time_start + pd.Timedelta(minutes=30)
+        
         for _, row in df.iterrows():
             etiqueta = str(row[col_etiqueta]).strip() if pd.notna(row[col_etiqueta]) else ""
             val = str(row[col]).strip() if pd.notna(row[col]) else ""
             if val != "" and val.lower() not in ["none", "nan", "null"]:
                 time_now = pd.to_datetime(agora_local.strftime("%Y-%m-%d %H:%M"))
                 is_andamento = (time_start <= time_now < time_end)
-                dados_gantt.append({"Etiqueta": etiqueta, "Inicio": time_start, "Fim": time_end, "Evento": val, "Status": "EM ANDAMENTO" if is_andamento else "PROGRAMADO"})
-                if is_andamento: atividades_em_andamento.add(val)
+                dados_gantt.append({
+                    "Etiqueta": etiqueta,
+                    "Inicio": time_start,
+                    "Fim": time_end,
+                    "Evento": val,
+                    "Status": "EM ANDAMENTO" if is_andamento else "PROGRAMADO"
+                })
+                if is_andamento:
+                    atividades_em_andamento.add(val)
 
 if atividades_em_andamento:
     texto_eventos = " | ".join(sorted(list(atividades_em_andamento)))
@@ -95,11 +106,49 @@ st.markdown("<h4 style='color: #00BFFF; margin-bottom: 10px;'>⚔️ Ritmo de Ba
 
 if dados_gantt:
     df_gantt = pd.DataFrame(dados_gantt)
-    fig = px.timeline(df_gantt, x_start="Inicio", x_end="Fim", y="Etiqueta", color="Status", hover_data=["Evento"], text="Evento", color_discrete_map={"EM ANDAMENTO": "#FF2400", "PROGRAMADO": "#1E90FF"})
-    fig.update_yaxes(autorange="reversed", title="Etiqueta / Setor", tickfont=dict(color="white"))
-    fig.update_xaxes(title="", tickfont=dict(color="white"))
-    fig.add_vline(x=pd.to_datetime(agora_local.strftime("%Y-%m-%d %H:%M:%S")), line_width=3, line_dash="solid", line_color="red")
-    fig.update_layout(plot_bgcolor="#0A0D14", paper_bgcolor="#0A0D14", font=dict(color="white"), margin=dict(l=10, r=10, t=10, b=10), height=620, showlegend=True, legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+    
+    # Ordenar Etiquetas conforme aparecem na planilha original
+    ordem_etiquetas = df[df.columns[0]].dropna().astype(str).str.strip().tolist()
+    
+    fig = px.timeline(
+        df_gantt,
+        x_start="Inicio",
+        x_end="Fim",
+        y="Etiqueta",
+        color="Status",
+        hover_data=["Evento"],
+        text="Evento",
+        color_discrete_map={"EM ANDAMENTO": "#FF2400", "PROGRAMADO": "#1E90FF"}
+    )
+    
+    fig.update_yaxes(
+        autorange="reversed",
+        categoryorder="array",
+        categoryarray=ordem_etiquetas,
+        title="Etiqueta / Setor",
+        tickfont=dict(color="white")
+    )
+    fig.update_xaxes(
+        title="",
+        tickfont=dict(color="white"),
+        dtick=1800000, # Marcas de tempo a cada 30 min
+        tickformat="%H:%M"
+    )
+    fig.add_vline(
+        x=pd.to_datetime(agora_local.strftime("%Y-%m-%d %H:%M:%S")),
+        line_width=3,
+        line_dash="solid",
+        line_color="red"
+    )
+    fig.update_layout(
+        plot_bgcolor="#0A0D14",
+        paper_bgcolor="#0A0D14",
+        font=dict(color="white"),
+        margin=dict(l=10, r=10, t=10, b=10),
+        height=750,
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
     fig.update_traces(textposition="inside", insidetextanchor="middle")
     st.plotly_chart(fig, use_container_width=True)
 else:
